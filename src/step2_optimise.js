@@ -1,3 +1,6 @@
+// NOTE: For demo purposes, travel times are mocked.
+// See /traveltime.py for real OSRM-based implementation.
+
 // wing13/src/step2_optimise.js
 // Calls Claude API to assign drivers and optimise routes given jobs + system state
 
