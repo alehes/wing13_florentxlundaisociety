@@ -1,278 +1,59 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8" />
-  <title>Skåne AI Dispatch Demo</title>
-
-  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
-  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-
-  <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      display: flex;
-      height: 100vh;
-    }
-
-    #panel {
-      width: 360px;
-      background: #0f172a;
-      color: white;
-      padding: 15px;
-      box-sizing: border-box;
-    }
-
-    #map {
-      flex: 1;
-    }
-
-    input, select, button {
-      width: 100%;
-      margin-top: 8px;
-      padding: 8px;
-      border-radius: 6px;
-      border: none;
-    }
-
-    button {
-      background: #22c55e;
-      color: white;
-      cursor: pointer;
-      font-weight: bold;
-    }
-
-    .log {
-      margin-top: 10px;
-      height: 320px;
-      overflow-y: auto;
-      background: #111827;
-      padding: 10px;
-      font-size: 12px;
-      border-radius: 6px;
-    }
-
-    .status {
-      margin-top: 10px;
-      color: #93c5fd;
-      font-size: 13px;
-    }
-  </style>
-</head>
-
-<body>
-
-<div id="panel">
-  <h2>🚑 Skåne Dispatch AI</h2>
-
-  <input id="name" placeholder="Patient name" />
-  <input id="address" placeholder="Address (Lund / Malmö / Helsingborg / Ystad)" />
-
-  <select id="type">
-    <option value="discharge">Discharge (Hospital → Home)</option>
-  </select>
-
-  <button onclick="sendEmail()">Send Email (New Discharge)</button>
-
-  <div class="status" id="status">System idle</div>
-
-  <div class="log" id="log"></div>
-</div>
-
-<div id="map"></div>
-
-<script>
-
-// ---------------- MAP ----------------
-const map = L.map('map').setView([55.7103, 13.2018], 10);
-
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  maxZoom: 19
-}).addTo(map);
-
-// 🏥 Correct Lund Hospital
-const hospital = [55.7103, 13.2018];
-L.marker(hospital).addTo(map).bindPopup("🏥 Skåne University Hospital (Lund)");
-
-// ---------------- INITIAL DRIVERS ----------------
-let drivers = [
-  { id: "D1", pos: [55.6050, 13.0038], color: "blue", job: null },
-  { id: "D2", pos: [56.0465, 12.6945], color: "green", job: null },
-  { id: "D3", pos: [55.7103, 13.2018], color: "orange", job: null }
-];
-
-const driverMarkers = {};
-
-drivers.forEach(d => {
-  driverMarkers[d.id] = L.circleMarker(d.pos, {
-    radius: 8,
-    color: d.color
-  }).addTo(map).bindPopup(d.id);
-});
-
-// ---------------- PRELOADED PICKUPS (planned hospital inbound) ----------------
 let jobs = [
+  // ---------------- PLANNED PICKUPS (Home → Hospital) ----------------
   {
     id: "P1",
     name: "Anna Svensson",
     type: "pickup",
-    pos: [55.7035, 13.1910],
+    pos: [55.7035, 13.1910], // Lund
     driver: null
   },
   {
     id: "P2",
     name: "Erik Nilsson",
     type: "pickup",
-    pos: [55.6050, 13.0038],
+    pos: [55.6050, 13.0038], // Malmö
     driver: null
   },
   {
     id: "P3",
     name: "Maria Larsson",
     type: "pickup",
-    pos: [56.0465, 12.6945],
+    pos: [56.0465, 12.6945], // Helsingborg
+    driver: null
+  },
+  {
+    id: "P4",
+    name: "Lars Johansson",
+    type: "pickup",
+    pos: [55.4295, 13.8200], // Ystad
+    driver: null
+  },
+  {
+    id: "P5",
+    name: "Karin Olsson",
+    type: "pickup",
+    pos: [55.8700, 13.6600], // Eslöv region
+    driver: null
+  },
+  {
+    id: "P6",
+    name: "Oskar Berg",
+    type: "pickup",
+    pos: [55.6350, 13.7000], // Staffanstorp area
+    driver: null
+  },
+  {
+    id: "P7",
+    name: "Elin Andersson",
+    type: "pickup",
+    pos: [56.1333, 12.9447], // Ängelholm
+    driver: null
+  },
+  {
+    id: "P8",
+    name: "Johan Ek",
+    type: "pickup",
+    pos: [55.5369, 13.3765], // Trelleborg
     driver: null
   }
 ];
-
-// ---------------- UTILS ----------------
-function log(msg) {
-  document.getElementById("log").innerHTML += msg + "<br/>";
-}
-
-function setStatus(msg) {
-  document.getElementById("status").innerText = msg;
-}
-
-function geocode(addr) {
-  const map = {
-    "lund": [55.7047, 13.1910],
-    "malmö": [55.6050, 13.0038],
-    "helsingborg": [56.0465, 12.6945],
-    "ystad": [55.4295, 13.8200]
-  };
-
-  for (let k in map) {
-    if (addr.toLowerCase().includes(k)) return map[k];
-  }
-
-  return [55.7 + Math.random()*0.2, 13.1 + Math.random()*0.2];
-}
-
-function distance(a, b) {
-  return Math.sqrt(
-    Math.pow(a[0]-b[0],2) + Math.pow(a[1]-b[1],2)
-  );
-}
-
-// ---------------- EMAIL → DISCHARGE JOB ----------------
-function sendEmail() {
-
-  const name = document.getElementById("name").value;
-  const address = document.getElementById("address").value;
-
-  const job = {
-    id: "D" + (jobs.length + 1),
-    name,
-    type: "discharge",
-    pos: geocode(address),
-    driver: null
-  };
-
-  jobs.push(job);
-
-  log("📩 New discharge request: " + name);
-  setStatus("AI processing...");
-
-  setTimeout(() => {
-    reoptimize();
-  }, 800);
-}
-
-// ---------------- CORE REOPTIMIZATION ----------------
-function reoptimize() {
-
-  setStatus("Reoptimizing routes...");
-
-  jobs.forEach(job => {
-
-    if (job.driver) return; // keep existing assignments
-
-    let best = null;
-    let bestDist = Infinity;
-
-    drivers.forEach(d => {
-      const dist = distance(d.pos, job.pos);
-      if (dist < bestDist) {
-        bestDist = dist;
-        best = d;
-      }
-    });
-
-    job.driver = best.id;
-    best.job = job;
-
-    animateDriver(best, job.pos);
-
-    log("🤖 " + job.name + " → assigned to " + best.id);
-  });
-
-  drawRoutes();
-  showDispatch();
-
-  setStatus("Idle");
-}
-
-// ---------------- ANIMATION ----------------
-function animateDriver(driver, target) {
-  const steps = 25;
-  let i = 0;
-  const start = [...driver.pos];
-
-  const interval = setInterval(() => {
-    i++;
-    const t = i / steps;
-
-    driver.pos = [
-      start[0] + (target[0]-start[0])*t,
-      start[1] + (target[1]-start[1])*t
-    ];
-
-    driverMarkers[driver.id].setLatLng(driver.pos);
-
-    if (i >= steps) clearInterval(interval);
-  }, 25);
-}
-
-// ---------------- ROUTES ----------------
-let routes = [];
-
-function drawRoutes() {
-  routes.forEach(r => map.removeLayer(r));
-  routes = [];
-
-  drivers.forEach(d => {
-    if (d.job) {
-      const line = L.polyline([d.pos, d.job.pos], {
-        color: d.color
-      }).addTo(map);
-
-      routes.push(line);
-    }
-  });
-}
-
-// ---------------- DISPATCH OUTPUT ----------------
-function showDispatch() {
-  log("<br>📦 DISPATCH OUTPUT:");
-  drivers.forEach(d => {
-    if (d.job) {
-      log("Driver " + d.id + " → " + d.job.name);
-    }
-  });
-}
-
-</script>
-
-</body>
-</html>
