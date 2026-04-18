@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Wing13 — Hackathon Pitch</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #0a0e27;
+    color: #fff;
+    overflow: hidden;
+    height: 100vh;
+  }
+  
+  .deck {
+    width: 100vw;
+    height: 100vh;
+    position: relative;
+  }
+  
+  .slide {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 4vw;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.5s ease;
+    background: radial-gradient(ellipse at top, #1a1f4a 0%, #0a0e27 70%);
+  }
+  
+  .slide.active {
+    opacity: 1;
+    pointer-events: all;
+  }
+  
+  h1 {
+    font-size: 5rem;
+    font-weight: 800;
+    margin-bottom: 1rem;
+    background: linear-gradient(135deg, #fff 0%, #8da9ff 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-align: center;
+  }
+  
+  h2 {
+    font-size: 3rem;
+    font-weight: 700;
+    margin-bottom: 2rem;
+    text-align: center;
+  }
+  
+  p.subtitle {
+    font-size: 1.8rem;
+    color: #a0aec0;
+    text-align: center;
+    margin-bottom: 1rem;
+  }
+  
+  .counter {
+    font-size: 12rem;
+    font-weight: 900;
+    background: linear-gradient(135deg, #ff6b6b 0%, #ffa500 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1;
+  }
+  
+  /* Slide 1 - Patient Grid */
+  .patient-grid {
+    display: grid;
+    grid-template-columns: repeat(25, 1fr);
+    gap: 6px;
+    margin-top: 2rem;
+    max-width: 900px;
+  }
+  
+  .patient {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #3a4170;
+    opacity: 0;
+    transform: scale(0);
+    transition: all 0.4s ease;
+  }
+  
+  .slide.active .patient {
+    opacity: 1;
+    transform: scale(1);
+  }
+  
+  .patient.highlight {
+    background: #ffa500;
+    box-shadow: 0 0 10px #ffa500;
+  }
+  
+  /* Slide 2 - Broken flow */
+  .flow {
+    display: flex;
+    gap: 2rem;
+    align-items: center;
+    margin-top: 3rem;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  
+  .flow-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.5s ease;
+  }
+  
+  .flow-item.show {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  
+  .flow-icon {
+    font-size: 4rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .flow-label {
+    font-size: 1rem;
+    color: #a0aec0;
+    text-align: center;
+    max-width: 140px;
+  }
+  
+  .arrow {
+    font-size: 2rem;
+    color: #4a5288;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+  }
+  
+  .arrow.show { opacity: 1; }
+  
+  .cost-banner {
+    margin-top: 3rem;
+    padding: 1.5rem 3rem;
+    background: linear-gradient(135deg, #ff4757, #ff6b6b);
+    border-radius: 12px;
+    font-size: 2.5rem;
+    font-weight: 800;
+    opacity: 0;
+    transform: scale(0.5);
+    transition: all 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  }
+  
+  .cost-banner.show {
+    opacity: 1;
+    transform: scale(1);
+  }
+  
+  /* Slide 3 - Map insight */
+  .map-container {
+    width: 80vw;
+    max-width: 900px;
+    height: 400px;
+    background: #151a3d;
+    border-radius: 20px;
+    position: relative;
+    margin-top: 2rem;
+    overflow: hidden;
+    border: 1px solid #2a3166;
+  }
+  
+  .map-bg {
+    position: absolute;
+    inset: 0;
+    background-image: 
+      linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+  
+  .map-point {
+    position: absolute;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    transform: translate(-50%, -50%);
+    z-index: 2;
+  }
+  
+  .map-point.home { background: #4ade80; }
+  .map-point.hospital { background: #60a5fa; width: 55px; height: 55px; font-size: 2rem; }
+  
+  .taxi {
+    position: absolute;
+    font-size: 2.5rem;
+    z-index: 3;
+    transform: translate(-50%, -50%);
+    transition: all 2s ease-in-out;
+  }
+  
+  .route-line {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+  }
+  
+  .route-line path {
+    fill: none;
+    stroke: #fbbf24;
+    stroke-width: 3;
+    stroke-dasharray: 8 8;
+    stroke-dashoffset: 1000;
+    transition: stroke-dashoffset 8s linear;
+  }
+  
+  .slide.active .route-line path {
+    stroke-dashoffset: 0;
+  }
+  
+  .tagline {
+    margin-top: 2rem;
+    font-size: 1.5rem;
+    color: #fbbf24;
+    font-style: italic;
+  }
+  
+  /* Slide 4 - Pipeline */
+  .pipeline {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 3rem;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  
+  .stage {
+    background: #151a3d;
+    border: 2px solid #2a3166;
+    border-radius: 16px;
+    padding: 1.5rem 1.8rem;
+    min-width: 160px;
+    text-align: center;
+    opacity: 0.3;
+    transition: all 0.5s ease;
+  }
+  
+  .stage.active {
+    opacity: 1;
+    border-color: #60a5fa;
+    box-shadow: 0 0 30px rgba(96, 165, 250, 0.4);
+    transform: translateY(-5px);
+  }
+  
+  .stage-icon {
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .stage-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 0.3rem;
+  }
+  
+  .stage-sub {
+    font-size: 0.8rem;
+    color: #a0aec0;
+  }
+  
+  .pipeline-arrow {
+    font-size: 1.5rem;
+    color: #4a5288;
+  }
+  
+  .constraints {
+    display: flex;
+    gap: 1rem;
+    margin-top: 3rem;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  
+  .chip {
+    background: rgba(96, 165, 250, 0.15);
+    border: 1px solid #60a5fa;
+    border-radius: 20px;
+    padding: 0.5rem 1.2rem;
+    font-size: 0.95rem;
+  }
+  
+  /* Slide 5 - Demo */
+  .terminal {
+    background: #0d0d0d;
+    border-radius: 12px;
+    padding: 2rem;
+    font-family: 'SF Mono', Monaco, monospace;
+    font-size: 1.4rem;
+    width: 70vw;
+    max-width: 800px;
+    margin-top: 2rem;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    border: 1px solid #2a3166;
+  }
+  
+  .terminal-header {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  .terminal-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+  }
+  
+  .prompt { color: #4ade80; }
+  .cmd { color: #fff; }
+  .cursor {
+    display: inline-block;
+    background: #fff;
+    width: 12px;
+    height: 1.4rem;
+    vertical-align: middle;
+    animation: blink 1s infinite;
+  }
+  
+  @keyframes blink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0; }
+  }
+  
+  /* Slide 6 - Closing */
+  .big-brand {
+    font-size: 8rem;
+    font-weight: 900;
+    background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 50%, #f472b6 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: pulse 2s ease-in-out infinite;
+  }
+  
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.03); }
+  }
+  
+  /* Navigation */
+  .nav-hint {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    color: #4a5288;
+    font-size: 0.85rem;
+    z-index: 100;
+  }
+  
+  .slide-num {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    color: #4a5288;
+    font-size: 0.85rem;
+    z-index: 100;
+  }
+  
+  .accent { color: #fbbf24; }
+  .danger { color: #ff6b6b; }
+  .success { color: #4ade80; }
+</style>
+</head>
+<body>
+
+<div class="deck">
+
+  <!-- SLIDE 1 -->
+  <section class="slide" id="s1">
+    <div class="counter" id="counter">0</div>
+    <p class="subtitle">patients discharged from <strong>Skånes Universitetssjukhus</strong></p>
+    <p class="subtitle" style="font-size:1.3rem; margin-top:0.5rem;">every single day</p>
+    <div class="patient-grid" id="patientGrid"></div>
+    <p class="subtitle" style="margin-top:2rem; font-size:1.3rem;">
+      <span class="accent">30–50%</span> need hospital-arranged transport
+    </p>
+  </section>
+
+  <!-- SLIDE 2 -->
+  <section class="slide" id="s2">
+    <h2>Today's workflow is broken</h2>
+    <div class="flow" id="flow">
+      <div class="flow-item"><div class="flow-icon">👩‍⚕️</div><div class="flow-label">Nurse needs transport</div></div>
+      <div class="arrow">→</div>
+      <div class="flow-item"><div class="flow-icon">☎️</div><div class="flow-label">Waits in phone queue</div></div>
+      <div class="arrow">→</div>
+      <div class="flow-item"><div class="flow-icon">🚕❌</div><div class="flow-label">No car available today</div></div>
+      <div class="arrow">→</div>
+      <div class="flow-item"><div class="flow-icon">🏥😴</div><div class="flow-label">Patient stays overnight</div></div>
+    </div>
+    <div class="cost-banner" id="costBanner">💸 +10,000 SEK &nbsp;•&nbsp; 🛏️ bed blocked for next patient</div>
+  </section>
+
+  <!-- SLIDE 3 -->
+  <section class="slide" id="s3">
+    <h2>What if one trip did <span class="accent">both</span>?</h2>
+    <p class="subtitle" style="font-size:1.2rem;">Skånetrafiken already drives <em>to</em> the hospital.</p>
+    <div class="map-container" id="mapContainer">
+      <div class="map-bg"></div>
+      <svg class="route-line" viewBox="0 0 900 400" preserveAspectRatio="none">
+        <path d="M 100,320 Q 250,100 450,200 Q 650,300 800,100" />
+      </svg>
+      <div class="map-point home" style="left:11%; top:80%;">🏠</div>
+      <div class="map-point hospital" style="left:50%; top:50%;">🏥</div>
+      <div class="map-point home" style="left:89%; top:25%;">🏠</div>
+      <div class="taxi" id="taxi" style="left:11%; top:80%;">🚕</div>
+    </div>
+
+  </section>
+
+  <!-- SLIDE 4 -->
+  <section class="slide" id="s4">
+    <h1>Wing13</h1>
+    <p class="subtitle">AI dispatch for hospital medical transport</p>
+    <div class="pipeline" id="pipeline">
+      <div class="stage" data-stage="0">
+        <div class="stage-icon">📧</div>
+        <div class="stage-title">Emails</div>
+        <div class="stage-sub">from nurses</div>
+      </div>
+      <div class="pipeline-arrow">→</div>
+      <div class="stage" data-stage="1">
+        <div class="stage-icon">🧠</div>
+        <div class="stage-title">Parse</div>
+        <div class="stage-sub">Claude extracts JSON</div>
+      </div>
+      <div class="pipeline-arrow">→</div>
+      <div class="stage" data-stage="2">
+        <div class="stage-icon">🗺️</div>
+        <div class="stage-title">Optimize</div>
+        <div class="stage-sub">Claude plans routes</div>
+      </div>
+      <div class="pipeline-arrow">→</div>
+      <div class="stage" data-stage="3">
+        <div class="stage-icon">📮</div>
+        <div class="stage-title">Dispatch</div>
+        <div class="stage-sub">emails to drivers</div>
+      </div>
+      <div class="pipeline-arrow">→</div>
+      <div class="stage" data-stage="4">
+        <div class="stage-icon">💾</div>
+        <div class="stage-title">State</div>
+        <div class="stage-sub">persists & re-optimizes</div>
+      </div>
+    </div>
+    <div class="constraints">
+      <div class="chip">Fits existing workflows</div>
+      <div class="chip">⏰ Shift-aware</div>
+      <div class="chip">👤 One patient per trip</div>
+      <div class="chip">🔄 Continuous re-planning</div>
+    </div>
+  </section>
+
+  <!-- SLIDE 5 -->
+  <section class="slide" id="s5">
+    <h1>Let's run it.</h1>
+    <div class="terminal">
+      <div class="terminal-header">
+        <div class="terminal-dot" style="background:#ff5f56;"></div>
+        <div class="terminal-dot" style="background:#ffbd2e;"></div>
+        <div class="terminal-dot" style="background:#27c93f;"></div>
+      </div>
+      <div><span class="prompt">wing13 $</span> <span class="cmd">npm start</span><span class="cursor"></span></div>
+    </div>
+    <p class="subtitle" style="margin-top:2rem; font-size:1.1rem;">→ switch to live demo</p>
+  </section>
+
+  <!-- SLIDE 6 -->
+  <section class="slide" id="s6">
+    <div class="big-brand">Wing13</div>
+    <p class="subtitle" style="margin-top:1rem; font-style:italic;">Skånes vingar. One brain. Zero empty seats.</p>
+    <p class="subtitle" style="margin-top:3rem; font-size:1rem;">Thank you</p>
+  </section>
+
+</div>
+
+<div class="slide-num"><span id="slideNum">1</span> / 6</div>
+<div class="nav-hint">← → to navigate</div>
+
+<script>
+  const slides = document.querySelectorAll('.slide');
+  let current = 0;
+  const total = slides.length;
+  
+  function show(i) {
+    slides.forEach(s => s.classList.remove('active'));
+    slides[i].classList.add('active');
+    document.getElementById('slideNum').textContent = i + 1;
+    triggerAnimations(i);
+  }
+  
+  // Build patient grid for slide 1
+  const grid = document.getElementById('patientGrid');
+  for (let i = 0; i < 250; i++) {
+    const p = document.createElement('div');
+    p.className = 'patient';
+    p.style.transitionDelay = (i * 8) + 'ms';
+    grid.appendChild(p);
+  }
+  
+  function triggerAnimations(i) {
+    if (i === 0) {
+      // Counter animation
+      const counter = document.getElementById('counter');
+      let n = 0;
+      const interval = setInterval(() => {
+        n += 5;
+        if (n >= 250) { n = 250; clearInterval(interval); }
+        counter.textContent = n;
+      }, 20);
+      
+      // Highlight ~40% of patients after grid loads
+      setTimeout(() => {
+        const patients = document.querySelectorAll('.patient');
+        patients.forEach((p, idx) => {
+          if (Math.random() < 0.4) {
+            setTimeout(() => p.classList.add('highlight'), idx * 4);
+          }
+        });
+      }, 2500);
+    }
+    
+    if (i === 1) {
+      // Flow reveal
+      const items = document.querySelectorAll('#flow .flow-item, #flow .arrow');
+      items.forEach((el, idx) => {
+        setTimeout(() => el.classList.add('show'), idx * 500);
+      });
+      setTimeout(() => {
+        document.getElementById('costBanner').classList.add('show');
+      }, items.length * 500 + 300);
+    }
+    
+    if (i === 2) {
+      // Taxi route animation
+      const taxi = document.getElementById('taxi');
+      taxi.style.transition = 'none';
+      taxi.style.left = '11%';
+      taxi.style.top = '80%';
+      
+      setTimeout(() => {
+        taxi.style.transition = 'all 2.5s ease-in-out';
+        taxi.style.left = '50%';
+        taxi.style.top = '50%';
+      }, 500);
+      
+      setTimeout(() => {
+        taxi.style.left = '89%';
+        taxi.style.top = '25%';
+      }, 3500);
+      
+      // Loop
+      setTimeout(() => {
+        taxi.style.transition = 'none';
+        taxi.style.left = '11%';
+        taxi.style.top = '80%';
+        setTimeout(() => triggerAnimations(2), 500);
+      }, 6500);
+    }
+    
+    if (i === 3) {
+      // Pipeline stages light up
+      const stages = document.querySelectorAll('.stage');
+      stages.forEach(s => s.classList.remove('active'));
+      stages.forEach((s, idx) => {
+        setTimeout(() => {
+          stages.forEach(x => x.classList.remove('active'));
+          s.classList.add('active');
+        }, idx * 700);
+      });
+      // Loop all active at end
+      setTimeout(() => {
+        stages.forEach(s => s.classList.add('active'));
+      }, stages.length * 700 + 200);
+    }
+  }
+  
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === ' ') {
+      current = Math.min(current + 1, total - 1);
+      show(current);
+    }
+    if (e.key === 'ArrowLeft') {
+      current = Math.max(current - 1, 0);
+      show(current);
+    }
+  });
+  
+  // Click anywhere to advance
+  document.addEventListener('click', () => {
+    current = Math.min(current + 1, total - 1);
+    show(current);
+  });
+  
+  show(0);
+</script>
+
+</body>
+</html>
