@@ -61,13 +61,13 @@ src/pipeline.js writes the new assignments back to state.json so the next run ca
 
 ---
 
-## 🖼 Demo
+## Demo
 
-### 📩 Example Email Input
+### Example Email Input
 
 *Add screenshot of email*
 
-![Example Email](./assets/example-email.png)
+![Example Email](./assets/nurseemail.png)
 
 ---
 
@@ -83,17 +83,17 @@ src/pipeline.js writes the new assignments back to state.json so the next run ca
 
 *Add dispatch email screenshot*
 
-![Dispatch](./assets/dispatch.png)
+![Dispatch](./assets/outgoingemail.png)
 
 
-### ⚠️ Note
+### Note
 
 The UI currently uses **mock data for demonstration purposes**.
 It represents how the system would behave when connected to the live pipeline.
 
 ---
 
-## 🗂 Project Structure
+## Project Structure
 
 ```id="struct1"
 wing13/
