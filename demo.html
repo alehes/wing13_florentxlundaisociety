@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>AI Hospital Transport Demo - Skåne</title>
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      display: flex;
+      height: 100vh;
+    }
+
+    #leftPanel {
+      width: 350px;
+      padding: 15px;
+      background: #0f172a;
+      color: white;
+    }
+
+    #map {
+      flex: 1;
+    }
+
+    input, button {
+      width: 100%;
+      margin-top: 8px;
+      padding: 8px;
+      border-radius: 6px;
+      border: none;
+    }
+
+    button {
+      background: #22c55e;
+      color: white;
+      cursor: pointer;
+    }
+
+    .log {
+      margin-top: 10px;
+      font-size: 12px;
+      background: #111827;
+      padding: 10px;
+      height: 300px;
+      overflow-y: auto;
+      border-radius: 6px;
+    }
+
+    .status {
+      margin-top: 10px;
+      font-size: 13px;
+      color: #93c5fd;
+    }
+  </style>
+</head>
+
+<body>
+
+<div id="leftPanel">
+  <h2>🚑 AI Dispatch System</h2>
+
+  <input id="name" placeholder="Patient name"/>
+  <input id="address" placeholder="Address in Lund / Malmö / Helsingborg"/>
+
+  <select id="type">
+    <option value="pickup">Pickup (Home → Hospital)</option>
+    <option value="discharge">Discharge (Hospital → Home)</option>
+  </select>
+
+  <button onclick="sendEmail()">Send Email</button>
+
+  <div class="status" id="status">Idle</div>
+
+  <div class="log" id="log"></div>
+</div>
+
+<div id="map"></div>
+
+<script>
+// ---------------- MAP INIT ----------------
+const map = L.map('map').setView([55.7047, 13.1910], 10); // Lund
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom: 19
+}).addTo(map);
+
+// ---------------- DATA ----------------
+const hospital = [55.7033, 13.1929]; // Lund hospital
+
+let drivers = [
+  { id: "D1", pos: [55.604981, 13.003822], color: "blue", job: null },
+  { id: "D2", pos: [56.046467, 12.694512], color: "green", job: null },
+  { id: "D3", pos: [55.6050, 13.1571], color: "orange", job: null }
+];
+
+let jobs = [];
+
+// ---------------- MARKERS ----------------
+const driverMarkers = {};
+const jobMarkers = [];
+
+L.marker(hospital).addTo(map).bindPopup("🏥 Skåne University Hospital");
+
+// init drivers
+drivers.forEach(d => {
+  driverMarkers[d.id] = L.circleMarker(d.pos, {
+    radius: 8,
+    color: d.color
+  }).addTo(map).bindPopup(d.id);
+});
+
+// ---------------- UTIL ----------------
+function log(msg) {
+  document.getElementById("log").innerHTML += msg + "<br/>";
+}
+
+function setStatus(msg) {
+  document.getElementById("status").innerText = msg;
+}
+
+// fake geocoding (VERY IMPORTANT FOR DEMO)
+function geocode(address) {
+  const lookup = {
+    "lund": [55.7047, 13.1910],
+    "malmö": [55.6050, 13.0038],
+    "helsingborg": [56.0465, 12.6945],
+    "ystad": [55.4295, 13.8200]
+  };
+
+  for (let key in lookup) {
+    if (address.toLowerCase().includes(key)) return lookup[key];
+  }
+
+  return [55.7 + Math.random()*0.2, 13.1 + Math.random()*0.2];
+}
+
+// ---------------- CORE LOGIC ----------------
+function sendEmail() {
+  const name = document.getElementById("name").value;
+  const address = document.getElementById("address").value;
+  const type = document.getElementById("type").value;
+
+  const pos = geocode(address);
+
+  const job = {
+    id: "J" + (jobs.length + 1),
+    name,
+    type,
+    pos,
+    time: Date.now()
+  };
+
+  jobs.push(job);
+
+  log("📩 New email received: " + name + " (" + type + ")");
+  setStatus("AI processing...");
+
+  // simulate AI delay
+  setTimeout(() => {
+    processJobs();
+  }, 1000);
+}
+
+// ---------------- SIMPLE OPTIMIZER ----------------
+function distance(a, b) {
+  return Math.sqrt(
+    Math.pow(a[0]-b[0],2) + Math.pow(a[1]-b[1],2)
+  );
+}
+
+function processJobs() {
+  setStatus("Reoptimizing routes...");
+
+  // assign each job to closest available driver
+  jobs.forEach(job => {
+    let bestDriver = null;
+    let bestDist = Infinity;
+
+    drivers.forEach(d => {
+      const dist = distance(d.pos, job.pos);
+      if (dist < bestDist) {
+        bestDist = dist;
+        bestDriver = d;
+      }
+    });
+
+    job.driver = bestDriver.id;
+    bestDriver.job = job;
+
+    // move driver (animation simulation)
+    animateMove(bestDriver, job.pos);
+
+    log("🤖 Assigned " + job.name + " → " + bestDriver.id);
+  });
+
+  drawRoutes();
+  showDispatch();
+
+  setStatus("Idle");
+}
+
+// ---------------- ANIMATION ----------------
+function animateMove(driver, target) {
+  const steps = 20;
+  let i = 0;
+
+  const start = [...driver.pos];
+
+  const interval = setInterval(() => {
+    i++;
+    const t = i / steps;
+
+    driver.pos = [
+      start[0] + (target[0]-start[0])*t,
+      start[1] + (target[1]-start[1])*t
+    ];
+
+    driverMarkers[driver.id].setLatLng(driver.pos);
+
+    if (i >= steps) clearInterval(interval);
+  }, 30);
+}
+
+// ---------------- ROUTES ----------------
+let routeLines = [];
+
+function drawRoutes() {
+  routeLines.forEach(l => map.removeLayer(l));
+  routeLines = [];
+
+  drivers.forEach(d => {
+    if (d.job) {
+      const line = L.polyline([d.pos, d.job.pos], {
+        color: d.color
+      }).addTo(map);
+
+      routeLines.push(line);
+    }
+  });
+}
+
+// ---------------- DISPATCH OUTPUT ----------------
+function showDispatch() {
+  log("<br>📦 DISPATCH TO SKÅNETRAFIKEN:");
+  drivers.forEach(d => {
+    if (d.job) {
+      log(
+        "Driver " + d.id +
+        " → " + d.job.name +
+        " (" + d.job.type + ")"
+      );
+    }
+  });
+}
+</script>
+
+</body>
+</html>
