@@ -1,0 +1,62 @@
+[
+  {
+    "job_id": "p1",
+    "type": "pickup",
+    "patient": "Anna Svensson",
+    "from": "Storgatan 5, Lund",
+    "to": "Skåne University Hospital Lund",
+    "time_window_start": "2026-04-18T08:30:00",
+    "time_window_end": "2026-04-18T09:30:00",
+    "priority": "normal"
+  },
+  {
+    "job_id": "p2",
+    "type": "pickup",
+    "patient": "Erik Nilsson",
+    "from": "Södra Förstadsgatan 45, Malmö",
+    "to": "Skåne University Hospital Lund",
+    "time_window_start": "2026-04-18T09:00:00",
+    "time_window_end": "2026-04-18T10:00:00",
+    "priority": "normal"
+  },
+  {
+    "job_id": "p3",
+    "type": "pickup",
+    "patient": "Maria Larsson",
+    "from": "Drottninggatan 20, Helsingborg",
+    "to": "Skåne University Hospital Lund",
+    "time_window_start": "2026-04-18T08:00:00",
+    "time_window_end": "2026-04-18T09:15:00",
+    "priority": "high"
+  },
+  {
+    "job_id": "d1",
+    "type": "discharge",
+    "patient": "Lars Johansson",
+    "from": "Skåne University Hospital Lund",
+    "to": "Västra Boulevarden 8, Kristianstad",
+    "time_window_start": "2026-04-18T10:30:00",
+    "time_window_end": "2026-04-18T12:00:00",
+    "priority": "normal"
+  },
+  {
+    "job_id": "d2",
+    "type": "discharge",
+    "patient": "Karin Olsson",
+    "from": "Skåne University Hospital Lund",
+    "to": "Östra Storgatan 12, Lund",
+    "time_window_start": "2026-04-18T11:00:00",
+    "time_window_end": "2026-04-18T12:30:00",
+    "priority": "normal"
+  },
+  {
+    "job_id": "d3",
+    "type": "discharge",
+    "patient": "Oskar Berg",
+    "from": "Skåne University Hospital Lund",
+    "to": "Malmö Central Station",
+    "time_window_start": "2026-04-18T11:30:00",
+    "time_window_end": "2026-04-18T13:00:00",
+    "priority": "high"
+  }
+]

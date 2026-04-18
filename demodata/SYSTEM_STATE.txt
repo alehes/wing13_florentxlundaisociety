@@ -1,0 +1,28 @@
+{
+  "current_time": "2026-04-18T09:45:00",
+
+  "active_assignments": {
+    "driver_1": ["p1"],
+    "driver_2": [],
+    "driver_3": ["p3"]
+  },
+
+  "in_progress_jobs": {
+    "p1": {
+      "status": "en_route_to_hospital",
+      "started_at": "2026-04-18T09:00:00"
+    },
+    "p3": {
+      "status": "en_route_to_hospital",
+      "started_at": "2026-04-18T08:10:00"
+    }
+  },
+
+  "completed_jobs": ["p0"],
+
+  "driver_positions": {
+    "driver_1": "on_route_to_hospital",
+    "driver_2": "Helsingborg Central Station",
+    "driver_3": "en_route_to_hospital"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "Malmö Central Station|Skåne University Hospital Lund": 40,
+  "Helsingborg Central Station|Skåne University Hospital Lund": 55,
+  "Lund Central Station|Skåne University Hospital Lund": 10,
+
+  "Skåne University Hospital Lund|Storgatan 5 Lund": 5,
+  "Skåne University Hospital Lund|Östra Storgatan 12 Lund": 7,
+  "Skåne University Hospital Lund|Södra Förstadsgatan 45 Malmö": 40,
+  "Skåne University Hospital Lund|Västra Boulevarden 8 Kristianstad": 60,
+  "Skåne University Hospital Lund|Malmö Central Station": 40,
+
+  "Storgatan 5 Lund|Skåne University Hospital Lund": 5,
+  "Södra Förstadsgatan 45 Malmö|Skåne University Hospital Lund": 40,
+  "Drottninggatan 20 Helsingborg|Skåne University Hospital Lund": 55
+}
