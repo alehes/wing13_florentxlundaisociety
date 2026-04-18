@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8" />
-  <title>AI Hospital Transport Demo - Skåne</title>
+  <title>Skåne AI Dispatch Demo</title>
 
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
@@ -15,18 +15,19 @@
       height: 100vh;
     }
 
-    #leftPanel {
-      width: 350px;
-      padding: 15px;
+    #panel {
+      width: 360px;
       background: #0f172a;
       color: white;
+      padding: 15px;
+      box-sizing: border-box;
     }
 
     #map {
       flex: 1;
     }
 
-    input, button {
+    input, select, button {
       width: 100%;
       margin-top: 8px;
       padding: 8px;
@@ -38,42 +39,42 @@
       background: #22c55e;
       color: white;
       cursor: pointer;
+      font-weight: bold;
     }
 
     .log {
       margin-top: 10px;
-      font-size: 12px;
+      height: 320px;
+      overflow-y: auto;
       background: #111827;
       padding: 10px;
-      height: 300px;
-      overflow-y: auto;
+      font-size: 12px;
       border-radius: 6px;
     }
 
     .status {
       margin-top: 10px;
-      font-size: 13px;
       color: #93c5fd;
+      font-size: 13px;
     }
   </style>
 </head>
 
 <body>
 
-<div id="leftPanel">
-  <h2>🚑 AI Dispatch System</h2>
+<div id="panel">
+  <h2>🚑 Skåne Dispatch AI</h2>
 
-  <input id="name" placeholder="Patient name"/>
-  <input id="address" placeholder="Address in Lund / Malmö / Helsingborg"/>
+  <input id="name" placeholder="Patient name" />
+  <input id="address" placeholder="Address (Lund / Malmö / Helsingborg / Ystad)" />
 
   <select id="type">
-    <option value="pickup">Pickup (Home → Hospital)</option>
     <option value="discharge">Discharge (Hospital → Home)</option>
   </select>
 
-  <button onclick="sendEmail()">Send Email</button>
+  <button onclick="sendEmail()">Send Email (New Discharge)</button>
 
-  <div class="status" id="status">Idle</div>
+  <div class="status" id="status">System idle</div>
 
   <div class="log" id="log"></div>
 </div>
@@ -81,31 +82,27 @@
 <div id="map"></div>
 
 <script>
-// ---------------- MAP INIT ----------------
-const map = L.map('map').setView([55.7047, 13.1910], 10); // Lund
+
+// ---------------- MAP ----------------
+const map = L.map('map').setView([55.7103, 13.2018], 10);
 
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   maxZoom: 19
 }).addTo(map);
 
-// ---------------- DATA ----------------
-const hospital = [55.7033, 13.1929]; // Lund hospital
+// 🏥 Correct Lund Hospital
+const hospital = [55.7103, 13.2018];
+L.marker(hospital).addTo(map).bindPopup("🏥 Skåne University Hospital (Lund)");
 
+// ---------------- INITIAL DRIVERS ----------------
 let drivers = [
-  { id: "D1", pos: [55.604981, 13.003822], color: "blue", job: null },
-  { id: "D2", pos: [56.046467, 12.694512], color: "green", job: null },
-  { id: "D3", pos: [55.6050, 13.1571], color: "orange", job: null }
+  { id: "D1", pos: [55.6050, 13.0038], color: "blue", job: null },
+  { id: "D2", pos: [56.0465, 12.6945], color: "green", job: null },
+  { id: "D3", pos: [55.7103, 13.2018], color: "orange", job: null }
 ];
 
-let jobs = [];
-
-// ---------------- MARKERS ----------------
 const driverMarkers = {};
-const jobMarkers = [];
 
-L.marker(hospital).addTo(map).bindPopup("🏥 Skåne University Hospital");
-
-// init drivers
 drivers.forEach(d => {
   driverMarkers[d.id] = L.circleMarker(d.pos, {
     radius: 8,
@@ -113,7 +110,32 @@ drivers.forEach(d => {
   }).addTo(map).bindPopup(d.id);
 });
 
-// ---------------- UTIL ----------------
+// ---------------- PRELOADED PICKUPS (planned hospital inbound) ----------------
+let jobs = [
+  {
+    id: "P1",
+    name: "Anna Svensson",
+    type: "pickup",
+    pos: [55.7035, 13.1910],
+    driver: null
+  },
+  {
+    id: "P2",
+    name: "Erik Nilsson",
+    type: "pickup",
+    pos: [55.6050, 13.0038],
+    driver: null
+  },
+  {
+    id: "P3",
+    name: "Maria Larsson",
+    type: "pickup",
+    pos: [56.0465, 12.6945],
+    driver: null
+  }
+];
+
+// ---------------- UTILS ----------------
 function log(msg) {
   document.getElementById("log").innerHTML += msg + "<br/>";
 }
@@ -122,79 +144,77 @@ function setStatus(msg) {
   document.getElementById("status").innerText = msg;
 }
 
-// fake geocoding (VERY IMPORTANT FOR DEMO)
-function geocode(address) {
-  const lookup = {
+function geocode(addr) {
+  const map = {
     "lund": [55.7047, 13.1910],
     "malmö": [55.6050, 13.0038],
     "helsingborg": [56.0465, 12.6945],
     "ystad": [55.4295, 13.8200]
   };
 
-  for (let key in lookup) {
-    if (address.toLowerCase().includes(key)) return lookup[key];
+  for (let k in map) {
+    if (addr.toLowerCase().includes(k)) return map[k];
   }
 
   return [55.7 + Math.random()*0.2, 13.1 + Math.random()*0.2];
 }
 
-// ---------------- CORE LOGIC ----------------
-function sendEmail() {
-  const name = document.getElementById("name").value;
-  const address = document.getElementById("address").value;
-  const type = document.getElementById("type").value;
-
-  const pos = geocode(address);
-
-  const job = {
-    id: "J" + (jobs.length + 1),
-    name,
-    type,
-    pos,
-    time: Date.now()
-  };
-
-  jobs.push(job);
-
-  log("📩 New email received: " + name + " (" + type + ")");
-  setStatus("AI processing...");
-
-  // simulate AI delay
-  setTimeout(() => {
-    processJobs();
-  }, 1000);
-}
-
-// ---------------- SIMPLE OPTIMIZER ----------------
 function distance(a, b) {
   return Math.sqrt(
     Math.pow(a[0]-b[0],2) + Math.pow(a[1]-b[1],2)
   );
 }
 
-function processJobs() {
+// ---------------- EMAIL → DISCHARGE JOB ----------------
+function sendEmail() {
+
+  const name = document.getElementById("name").value;
+  const address = document.getElementById("address").value;
+
+  const job = {
+    id: "D" + (jobs.length + 1),
+    name,
+    type: "discharge",
+    pos: geocode(address),
+    driver: null
+  };
+
+  jobs.push(job);
+
+  log("📩 New discharge request: " + name);
+  setStatus("AI processing...");
+
+  setTimeout(() => {
+    reoptimize();
+  }, 800);
+}
+
+// ---------------- CORE REOPTIMIZATION ----------------
+function reoptimize() {
+
   setStatus("Reoptimizing routes...");
 
-  // assign each job to closest available driver
   jobs.forEach(job => {
-    let bestDriver = null;
+
+    if (job.driver) return; // keep existing assignments
+
+    let best = null;
     let bestDist = Infinity;
 
     drivers.forEach(d => {
       const dist = distance(d.pos, job.pos);
       if (dist < bestDist) {
         bestDist = dist;
-        bestDriver = d;
+        best = d;
       }
     });
 
-    job.driver = bestDriver.id;
-    bestDriver.job = job;
+    job.driver = best.id;
+    best.job = job;
 
-    // move driver (animation simulation)
-    animateMove(bestDriver, job.pos);
+    animateDriver(best, job.pos);
 
-    log("🤖 Assigned " + job.name + " → " + bestDriver.id);
+    log("🤖 " + job.name + " → assigned to " + best.id);
   });
 
   drawRoutes();
@@ -204,10 +224,9 @@ function processJobs() {
 }
 
 // ---------------- ANIMATION ----------------
-function animateMove(driver, target) {
-  const steps = 20;
+function animateDriver(driver, target) {
+  const steps = 25;
   let i = 0;
-
   const start = [...driver.pos];
 
   const interval = setInterval(() => {
@@ -222,15 +241,15 @@ function animateMove(driver, target) {
     driverMarkers[driver.id].setLatLng(driver.pos);
 
     if (i >= steps) clearInterval(interval);
-  }, 30);
+  }, 25);
 }
 
 // ---------------- ROUTES ----------------
-let routeLines = [];
+let routes = [];
 
 function drawRoutes() {
-  routeLines.forEach(l => map.removeLayer(l));
-  routeLines = [];
+  routes.forEach(r => map.removeLayer(r));
+  routes = [];
 
   drivers.forEach(d => {
     if (d.job) {
@@ -238,24 +257,21 @@ function drawRoutes() {
         color: d.color
       }).addTo(map);
 
-      routeLines.push(line);
+      routes.push(line);
     }
   });
 }
 
 // ---------------- DISPATCH OUTPUT ----------------
 function showDispatch() {
-  log("<br>📦 DISPATCH TO SKÅNETRAFIKEN:");
+  log("<br>📦 DISPATCH OUTPUT:");
   drivers.forEach(d => {
     if (d.job) {
-      log(
-        "Driver " + d.id +
-        " → " + d.job.name +
-        " (" + d.job.type + ")"
-      );
+      log("Driver " + d.id + " → " + d.job.name);
     }
   });
 }
+
 </script>
 
 </body>
